@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CloudDeploy</title>
+  <style>
+    :root { color-scheme: dark; --accent: #5eb0ff; --ink: #101418; --card: #1a222b; --text: #eef3f8; --muted: #a9b7c6; }
+    html[data-color="GREEN"] { --accent: #3dce8e; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: "Segoe UI", system-ui, sans-serif; color: var(--text);
+      background: radial-gradient(700px 280px at 50% 0%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%), var(--ink);
+    }
+    main { width: min(640px, calc(100% - 32px)); padding: 28px; background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; }
+    .kicker { margin: 0; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-size: .78rem; }
+    h1 { margin: 8px 0 12px; font-size: clamp(4rem, 16vw, 6.5rem); line-height: .85; letter-spacing: -.06em; color: var(--accent); }
+    p { margin: 0 0 16px; color: var(--muted); line-height: 1.5; }
+    .badge { display: inline-block; margin: 0 0 18px; padding: 6px 10px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
+    div { padding: 12px; border-radius: 14px; background: rgba(255,255,255,.03); }
+    dt { color: var(--muted); font-size: .78rem; }
+    dd { margin: 6px 0 0; font-family: ui-monospace, Consolas, monospace; }
+    button { margin-top: 16px; border: 0; border-radius: 12px; padding: 10px 14px; background: var(--accent); color: #082033; font: inherit; font-weight: 700; cursor: pointer; }
+    html[data-color="GREEN"] button { color: #062216; }
+    @media (max-width: 560px) { dl { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker">CloudDeploy</p>
+    <h1 id="color">BLUE</h1>
+    <p>Automated CI/CD with Jenkins, Docker, and Kubernetes</p>
+    <p id="status" class="badge">local</p>
+    <dl>
+      <div><dt>Version</dt><dd id="version">v1.0</dd></div>
+      <div><dt>Environment</dt><dd id="environment">BLUE</dd></div>
+      <div><dt>Build</dt><dd id="build">local</dd></div>
+      <div><dt>Pod</dt><dd id="pod">browser</dd></div>
+    </dl>
+    <button type="button" id="reload">Refresh</button>
+  </main>
+  <script>
+    window.CLOUDDEPLOY_CONFIG = window.CLOUDDEPLOY_CONFIG || {
+      deployColor: "BLUE", version: "v1.0", buildId: "local", podName: "browser", status: "local"
+    };
+  </script>
+  <script src="config.js"></script>
+  <script>
+    function show(cfg) {
+      const color = cfg.deployColor === "GREEN" ? "GREEN" : "BLUE";
+      document.documentElement.dataset.color = color;
+      document.title = "CloudDeploy · " + color + " · " + cfg.version;
+      document.getElementById("color").textContent = color;
+      document.getElementById("environment").textContent = color;
+      document.getElementById("version").textContent = cfg.version || "v1.0";
+      document.getElementById("build").textContent = cfg.buildId || "local";
+      document.getElementById("pod").textContent = cfg.podName || "browser";
+      document.getElementById("status").textContent = cfg.status || "running";
+    }
+    show(window.CLOUDDEPLOY_CONFIG);
+    document.getElementById("reload").addEventListener("click", function () {
+      const script = document.createElement("script");
+      script.src = "config.js?ts=" + Date.now();
+      script.onload = function () { show(window.CLOUDDEPLOY_CONFIG); };
+      script.onerror = function () { show(window.CLOUDDEPLOY_CONFIG); };
+      document.body.appendChild(script);
+    });
+  </script>
+</body>
+</html>

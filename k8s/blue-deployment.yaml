@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clouddeploy-blue
+  labels:
+    app: clouddeploy
+    color: blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clouddeploy
+      color: blue
+  template:
+    metadata:
+      labels:
+        app: clouddeploy
+        color: blue
+    spec:
+      containers:
+        - name: web
+          image: clouddeploy:v1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          env:
+            - name: DEPLOY_COLOR
+              value: "BLUE"
+            - name: APP_VERSION
+              value: "v1.0"
+            - name: BUILD_ID
+              value: "initial"
+            - name: DEPLOY_STATUS
+              value: "healthy"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "64Mi"

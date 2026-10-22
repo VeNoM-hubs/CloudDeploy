@@ -1,0 +1,18 @@
+# Applying this file again sets the stable selector back to blue.
+# The Jenkins switch stage patches this selector after the new pods are ready.
+apiVersion: v1
+kind: Service
+metadata:
+  name: clouddeploy
+  labels:
+    app: clouddeploy
+spec:
+  type: NodePort
+  selector:
+    app: clouddeploy
+    color: blue
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080
