@@ -1,35 +1,7 @@
-FROM nginx:1.27-alpine
+FROM nginx:alpine
 
-COPY index.html /usr/share/nginx/html/index.html
+ARG DEPLOY_COLOR=BLUE
+ARG APP_VERSION=v1.0
+ARG BUILD_ID=local
 
-# The Nginx image runs executable scripts in /docker-entrypoint.d before it serves traffic.
-RUN cat > /docker-entrypoint.d/40-clouddeploy.sh << 'ENDSCRIPT'
-#!/bin/sh
-set -eu
-color=$(printf '%s' "${DEPLOY_COLOR:-BLUE}" | tr '[:lower:]' '[:upper:]')
-case "$color" in
-  BLUE|GREEN) ;;
-  *) echo "DEPLOY_COLOR must be BLUE or GREEN" >&2; exit 1 ;;
-esac
-version=$(printf '%s' "${APP_VERSION:-v1.0}" | tr -cd 'A-Za-z0-9._-')
-build=$(printf '%s' "${BUILD_ID:-local}" | tr -cd 'A-Za-z0-9._-')
-pod=$(printf '%s' "${POD_NAME:-}" | tr -cd 'A-Za-z0-9._-')
-status=$(printf '%s' "${DEPLOY_STATUS:-healthy}" | tr -cd 'A-Za-z0-9._-')
-if [ -z "$pod" ]; then pod=$(hostname | tr -cd 'A-Za-z0-9._-'); fi
-if [ -z "$version" ] || [ -z "$build" ] || [ -z "$pod" ] || [ -z "$status" ]; then
-  echo "Version, build, status, and pod name must use letters, numbers, dots, underscores, or hyphens." >&2
-  exit 1
-fi
-cat > /usr/share/nginx/html/config.js << ENDCONFIG
-window.CLOUDDEPLOY_CONFIG = {
-  deployColor: "${color}",
-  version: "${version}",
-  buildId: "${build}",
-  podName: "${pod}",
-  status: "${status}"
-};
-ENDCONFIG
-ENDSCRIPT
-RUN chmod 755 /docker-entrypoint.d/40-clouddeploy.sh
-
-EXPOSE 80
+RUN printf '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>CloudDeploy</title>\n<style>body{font-family:Arial,sans-serif;text-align:center;padding:60px;background:#101827;color:white} .card{max-width:650px;margin:auto;padding:40px;border-radius:18px;background:#1e293b}h1{color:#38bdf8}.tag{display:inline-block;padding:8px 14px;border-radius:20px;background:#334155}p{color:#cbd5e1}</style>\n</head>\n<body>\n<div class="card">\n<h1>CloudDeploy</h1>\n<p>CI/CD with Jenkins, Docker and Kubernetes</p>\n<p class="tag">Deployment: %s</p>\n<p>Version: %s</p>\n<p>Build: %s</p>\n<p>Automated Blue-Green Deployment Demo</p>\n</div>\n</body>\n</html>\n' "$DEPLOY_COLOR" "$APP_VERSION" "$BUILD_ID" > /usr/share/nginx/html/index.html
