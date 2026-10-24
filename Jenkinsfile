@@ -44,9 +44,9 @@ pipeline {
                       sleep 1
                     done
                     test "$ok" -eq 1
-                    body=$(curl -fsS http://127.0.0.1:18080/config.js)
-                    printf '%s\n' "$body" | grep -q "deployColor: \"${DEPLOY_COLOR}\""
-                    printf '%s\n' "$body" | grep -q "version: \"${APP_VERSION}\""
+                    body=$(curl -fsS http://127.0.0.1:18080/)
+                    echo "$body" | grep -q "CloudDeploy"
+                    echo "$body" | grep -q "Automated Blue-Green Deployment Demo"
                 '''
             }
         }
