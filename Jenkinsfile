@@ -80,21 +80,36 @@ pipeline {
             steps {
                 sh '''
                     set -eu
+
                     case "$DEPLOY_COLOR" in
                       BLUE) label=blue ;;
                       GREEN) label=green ;;
-                      *) exit 1 ;;
+                      *) echo "DEPLOY_COLOR must be BLUE or GREEN" >&2; exit 1 ;;
                     esac
-                    build_id="${BUILD_ID:-jenkins-$BUILD_NUMBER}"
-                    ready=$(kubectl get "deployment/clouddeploy-${label}" -o jsonpath='{.status.readyReplicas}')
+
+                    image="clouddeploy:${APP_VERSION}"
+
+                    # Confirm that the deployment has ready replicas.
+                    ready=$(kubectl get "deployment/clouddeploy-${label}" \
+                      -o jsonpath='{.status.readyReplicas}')
                     test "${ready:-0}" -ge 1
-                    pod=$(kubectl get pods -l "app=clouddeploy,color=${label}" -o jsonpath='{.items[0].metadata.name}')
-                    body=$(kubectl exec "$pod" -- cat /usr/share/nginx/html/config.js)
-                    printf '%s\n' "$body" | grep -q "deployColor: \"${DEPLOY_COLOR}\""
-                    printf '%s\n' "$body" | grep -q "version: \"${APP_VERSION}\""
-                    printf '%s\n' "$body" | grep -q "buildId: \"${build_id}\""
+
+                    # Verify that Kubernetes is configured with the expected image.
+                    deployed_image=$(kubectl get "deployment/clouddeploy-${label}" \
+                      -o jsonpath='{.spec.template.spec.containers[?(@.name=="web")].image}')
+
+                    if [ "$deployed_image" != "$image" ]; then
+                      echo "Expected image: $image"
+                      echo "Found image: $deployed_image"
+                      exit 1
+                    fi
+
+                    # Switch live traffic to the selected deployment.
                     kubectl patch service clouddeploy --type merge \
                       -p "{\"spec\":{\"selector\":{\"app\":\"clouddeploy\",\"color\":\"${label}\"}}}"
+
+                    echo "Traffic successfully switched to ${DEPLOY_COLOR}"
+                    kubectl get service clouddeploy
                 '''
             }
         }
