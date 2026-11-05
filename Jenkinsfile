@@ -105,8 +105,8 @@ pipeline {
                     fi
 
                     # Switch live traffic to the selected deployment.
-                    kubectl patch service clouddeploy --type merge \
-                      -p "{\"spec\":{\"selector\":{\"app\":\"clouddeploy\",\"color\":\"${label}\"}}}"
+                    patch=$(printf '{"spec":{"selector":{"app":"clouddeploy","color":"%s"}}}' "$label")
+                    kubectl patch service clouddeploy --type merge -p "$patch"
 
                     echo "Traffic successfully switched to ${DEPLOY_COLOR}"
                     kubectl get service clouddeploy
