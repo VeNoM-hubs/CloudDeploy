@@ -22,7 +22,18 @@ pipeline {
             steps { checkout scm }
         }
         stage('Build image') {
-            steps { sh 'docker build -t "clouddeploy:${APP_VERSION}" .' }
+            steps {
+                sh '''
+                    set -eu
+                    build_id="${BUILD_ID:-jenkins-$BUILD_NUMBER}"
+
+                    docker build \
+                      --build-arg DEPLOY_COLOR="$DEPLOY_COLOR" \
+                      --build-arg APP_VERSION="$APP_VERSION" \
+                      --build-arg BUILD_ID="$build_id" \
+                      -t "clouddeploy:${APP_VERSION}" .
+                '''
+            }
         }
         stage('Smoke test') {
             steps {
